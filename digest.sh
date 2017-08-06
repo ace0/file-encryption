@@ -26,7 +26,7 @@ while getopts ":a:c:s:e:p:h" opt; do
 			echo "-c Yubikey challenge string"
 			echo "-s Yubikey slot number for HMAC-SHA1 chalresp"
 			echo "-e Output encoding"
-			echo "-p password to as dgst input"
+			echo "-p password as dgst input"
 			exit 0;;
 	esac
 done
