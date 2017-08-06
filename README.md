@@ -21,5 +21,5 @@ The above example uses the key stored in slot 9d: Key Management. See https://de
 
 This example requires the public-key encrypted symmetric key *encryption.key.enc* in the same directory. You can use a specific key using the `-k` option.
 ```
-/encryptFile -y -p 01:03 -f file_to_encrypt.enc -d
+./encryptFile -y -p 01:03 -f file_to_encrypt.enc -d
 ```
