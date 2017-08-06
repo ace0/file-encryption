@@ -15,7 +15,7 @@ In addition you need to store openssl.cnf in the same folder as this script to c
 ```
 ./encryptFile -y -p 01:03 -f file_to_encrypt
 ```
-The above example uses the key stored in slot 9c: Key Management. See https://developers.yubico.com/PIV/Introduction/Certificate_slots.html for descriptions of the different PIV slots. In this example a 256 bit symmetric key *encryption.key* will be automatically generated and encrypted using the public key stored on the smartcard. You can use a specific key using the `-k` option. To determine the key ID you can use `pkcs15-tool --list-keys`. The structure is 'Auth ID:ID'
+The above example uses the key stored in slot 9d: Key Management. See https://developers.yubico.com/PIV/Introduction/Certificate_slots.html for descriptions of the different PIV slots. In this example a 256 bit symmetric key *encryption.key* will be automatically generated and encrypted using the public key stored on the smartcard. You can use a specific key using the `-k` option. To determine the key ID you can use `pkcs15-tool --list-keys`. The structure is 'Auth ID:ID'
 
 **Decryption using Yubikey PIV Smartcard**
 
