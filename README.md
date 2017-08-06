@@ -2,7 +2,7 @@
 
 This repository contrains scripts to encrypt/decrypt files using OpenSSL. The target file will be encrypted using a symmetric key. It especially aims at making asymmetric public/private key encryption easier and includes a configuration file to use a key stored on a Yubikey PIV smartcard or other pkcs11 compatible smartcards. This will encrypt the file using a symmetric key and encrypt this key using the public key. The encrypted symmetric key and file can then be shared over the internet or stored in a cloud space. The private key for decrypting the symmetric key is securely stored on the Yubikey.
 
-The script is tested on Ubuntu. The OpenSSL config file openssl.cnf for pkcs11 might be adapted to your system.
+The script is tested on Ubuntu. The OpenSSL config file `openssl.cnf` for pkcs11 might be adapted to your system.
 
 In order to use public/private key encrpytion stored on a Yubikey you have to install OpenSC PKCS11 library. In Ubuntu, do
 ```
