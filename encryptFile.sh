@@ -1,6 +1,10 @@
 #!/bin/bash
+
+path=$(dirname $0)
+
 file=
 key=
+destdir=.
 key_default_name=encryption
 pubkey=
 cipher=aes-256-cbc
@@ -12,7 +16,7 @@ yubikey=false
 encoding=base64
 
 # parse parameters
-while getopts ":f:k:K:c:dp:ye:o:h" opt; do
+while getopts ":f:k:K:c:dp:ye:o:D:h" opt; do
 	case $opt in
 		f)
 			file="$OPTARG";;
@@ -30,6 +34,9 @@ while getopts ":f:k:K:c:dp:ye:o:h" opt; do
 		o)
 			outfile="$OPTARG"
 			do_shift=$((do_shift+2));;
+		D)
+			destdir="$OPTARG"
+			do_shift=$((do_shift+2));;
 		p)
 			pubkey="$OPTARG"
 			do_shift=$((do_shift+2));;
@@ -45,6 +52,7 @@ while getopts ":f:k:K:c:dp:ye:o:h" opt; do
 			echo "-f path to file to encrypt"
 			echo "-d set this flag to decrypt file"
 			echo "-o optional output filename"
+			echo "-D destination direcctory"
 			echo "-p optional public RSA key to use for encryption. In this case, the encryption key will be encrypted using the RSA key. To decrypt the data, the corresponding private RSA key is needed along the encrypted encryption key."
 			echo "-c encryption cipher to use. Defaults to aes-256-cbc"
 			echo "-y use yubikey PIV smartcard for asymmetric encryption. Set -k to slot to use, e.g. 01:03 for slot 9d"
@@ -80,13 +88,15 @@ if [ "$key" == "" ]; then
 	else
 		key=$key_default_name.key.enc
 	fi
+	
+	#key=$(dirname $file)/$key
 fi
 
 # If key does not exist, construct a new one if file is encrypted, otherwise abort
 if [ ! -e "$key" ]; then
 	if [ "$decrypt" = "false" ]; then
-		echo "Generating new random 32 bytes symmetric encryption key"
-		openssl rand -hex 32 > $key
+		echo "Generating new random 512 bit symmetric encryption key"
+		openssl rand -hex 64 > $key
 	else
 		echo "Missing decryption key file..."
 		exit 1
@@ -104,8 +114,8 @@ if [ "$pubkey" == "" ]; then
 	openssl enc -"$cipher" -a -pass file:$key -in $file -out $outfile $@
 else
 	opts=
-	if [ "$yubikey"="true" ]; then
-		export OPENSSL_CONF=./openssl.cnf
+	if [ "$yubikey" = "true" ]; then
+		export OPENSSL_CONF=$path/openssl.cnf
 		opts="-keyform engine -engine pkcs11"
 	fi
 	
@@ -115,26 +125,40 @@ else
 		# encrypt the key using other person's public key
 		openssl rsautl -encrypt $opts -inkey $pubkey -pubin -in $key -out $key.enc $@
 		
-		# base64 encode encrypted symmetric key
 		if [ $encoding == "base64" ]; then
 			cat $key.enc | openssl base64 > $key.enc.base64 && mv $key.enc.base64 $key.enc
 		fi
 		
 		# encrypt the file
 		openssl enc -"$cipher" -a -pass file:$key -in $file -out $outfile
+		
+		# move encrypted symmetric key and file to destination directory
+		if [ "$destdir" != "." ]; then
+			mv $outfile $destdir
+			mv $key.enc $destdir
+		fi
 	else
 		# asymmetric decryption using own public key-encrypted key and private key
 		shift 1
 		
-		# base64 decode encrypted symmetric key
 		if [ $encoding == "base64" ]; then
-			cat $key | openssl base64 -d > "$key.bin" && mv $key.bin $key
+			cat $key | openssl base64 -d > "$key.bin"
 		fi
 		
 		newkey=$(echo $key | sed 's/.enc//')
 		# decrypt key
-		openssl rsautl -decrypt $opts -inkey $pubkey -in $key -out $newkey.bin $@
+		openssl rsautl -decrypt $opts -inkey $pubkey -in $key.bin -out $newkey.decrypted $@
+		
 		# decrypt file
-		openssl enc -d -"$cipher" -a -pass file:$newkey.bin -in $file -out $outfile
+		openssl enc -d -"$cipher" -a -pass file:$newkey.decrypted -in $file -out $outfile
+		
+		# remove encrypted binary symmetric key
+		rm $key.bin
+		
+		# move decrypted symmetric key and file to destination directory
+		if [ "$destdir" != "." ]; then
+			mv $outfile $destdir
+			mv $newkey.decrypted $destdir
+		fi
 	fi
 fi
